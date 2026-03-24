@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradingAgents Dashboard</title>
+<style>
+  :root {
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-tertiary: #21262d;
+    --border: #30363d;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-muted: #6e7681;
+    --accent: #58a6ff;
+    --accent-hover: #79c0ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --yellow: #d29922;
+    --orange: #db6d28;
+    --purple: #bc8cff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.5;
+  }
+
+  /* Layout */
+  .app-container {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    width: 280px;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    padding: 20px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    max-height: 100vh;
+    position: sticky;
+    top: 0;
+  }
+
+  .main-content {
+    flex: 1;
+    padding: 32px 40px;
+    max-width: 960px;
+  }
+
+  /* Header */
+  .logo {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .logo-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+  }
+
+  /* History sidebar */
+  .history-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+
+  .history-item {
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-bottom: 4px;
+    transition: background 0.15s;
+  }
+
+  .history-item:hover {
+    background: var(--bg-tertiary);
+  }
+
+  .history-item.active {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+  }
+
+  .history-ticker {
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .history-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .history-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-left: 6px;
+  }
+
+  .history-empty {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  /* Input form */
+  .section-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+
+  .form-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .form-group {
+    flex: 1;
+    min-width: 180px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus {
+    border-color: var(--accent);
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    width: 100%;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Progress tracker */
+  .progress-section {
+    display: none;
+    margin-bottom: 32px;
+  }
+
+  .progress-section.visible {
+    display: block;
+  }
+
+  .progress-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+
+  .progress-list {
+    list-style: none;
+  }
+
+  .progress-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 14px;
+    color: var(--text-muted);
+    transition: color 0.2s;
+  }
+
+  .progress-item.running {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .progress-item.done {
+    color: var(--green);
+  }
+
+  .progress-item.failed {
+    color: var(--red);
+  }
+
+  .progress-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Results */
+  .results-section {
+    display: none;
+  }
+
+  .results-section.visible {
+    display: block;
+  }
+
+  .decision-banner {
+    text-align: center;
+    padding: 32px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 24px;
+  }
+
+  .decision-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .decision-badge {
+    display: inline-block;
+    font-size: 32px;
+    font-weight: 800;
+    padding: 8px 32px;
+    border-radius: 8px;
+    letter-spacing: 2px;
+  }
+
+  .decision-badge.BUY { background: rgba(63,185,80,0.15); color: var(--green); border: 2px solid var(--green); }
+  .decision-badge.OVERWEIGHT { background: rgba(63,185,80,0.10); color: #7ee787; border: 2px solid #7ee787; }
+  .decision-badge.HOLD { background: rgba(210,153,34,0.15); color: var(--yellow); border: 2px solid var(--yellow); }
+  .decision-badge.UNDERWEIGHT { background: rgba(219,109,40,0.15); color: var(--orange); border: 2px solid var(--orange); }
+  .decision-badge.SELL { background: rgba(248,81,73,0.15); color: var(--red); border: 2px solid var(--red); }
+
+  .decision-ticker {
+    font-size: 18px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+  }
+
+  /* Report cards */
+  .report-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+
+  .report-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+
+  .report-header:hover {
+    background: var(--bg-tertiary);
+  }
+
+  .report-title {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .report-toggle {
+    color: var(--text-muted);
+    font-size: 18px;
+    transition: transform 0.2s;
+  }
+
+  .report-card.open .report-toggle {
+    transform: rotate(180deg);
+  }
+
+  .report-body {
+    display: none;
+    padding: 0 20px 20px;
+  }
+
+  .report-card.open .report-body {
+    display: block;
+  }
+
+  .report-content {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 500px;
+    overflow-y: auto;
+    color: var(--text-secondary);
+  }
+
+  /* Error state */
+  .error-banner {
+    background: rgba(248,81,73,0.1);
+    border: 1px solid var(--red);
+    color: var(--red);
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    display: none;
+  }
+
+  .error-banner.visible {
+    display: block;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .app-container { flex-direction: column; }
+    .sidebar {
+      width: 100%;
+      max-height: none;
+      position: static;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+    .main-content { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">TradingAgents</div>
+    <div class="logo-sub">Multi-Agent LLM Trading Framework</div>
+
+    <div class="history-title">Analysis History</div>
+    <div id="history-list">
+      <div class="history-empty">No analyses yet</div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main-content">
+    <h1 class="section-title">New Analysis</h1>
+
+    <!-- Input Form -->
+    <div class="form-card">
+      <form id="analyze-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="ticker">Ticker Symbol</label>
+            <input type="text" id="ticker" placeholder="e.g. NVDA" required>
+          </div>
+          <div class="form-group">
+            <label for="analysis-date">Analysis Date</label>
+            <input type="date" id="analysis-date" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="llm-provider">LLM Provider</label>
+            <select id="llm-provider">
+              <option value="openai">OpenAI</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="google">Google</option>
+              <option value="xai">xAI (Grok)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="deep-model">Deep Think Model</label>
+            <select id="deep-model"></select>
+          </div>
+          <div class="form-group">
+            <label for="quick-model">Quick Think Model</label>
+            <select id="quick-model"></select>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary" id="run-btn">Run Analysis</button>
+      </form>
+    </div>
+
+    <!-- Error banner -->
+    <div class="error-banner" id="error-banner"></div>
+
+    <!-- Progress tracker -->
+    <div class="progress-section" id="progress-section">
+      <div class="progress-title">Analysis Progress</div>
+      <ul class="progress-list" id="progress-list"></ul>
+    </div>
+
+    <!-- Results -->
+    <div class="results-section" id="results-section">
+      <div class="decision-banner" id="decision-banner">
+        <div class="decision-label">Trading Decision</div>
+        <div class="decision-badge" id="decision-badge"></div>
+        <div class="decision-ticker" id="decision-ticker"></div>
+      </div>
+
+      <div id="report-cards"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Model catalog
+// ---------------------------------------------------------------------------
+const MODELS = {{ models | tojson }};
+
+const STAGES = [
+  "Initializing",
+  "Market Analyst",
+  "Social Media Analyst",
+  "News Analyst",
+  "Fundamentals Analyst",
+  "Bull/Bear Debate",
+  "Research Manager",
+  "Trader",
+  "Risk Debate",
+  "Portfolio Manager",
+  "Final Decision",
+];
+
+const REPORT_MAP = [
+  { key: "market_report",            title: "Market Analysis" },
+  { key: "sentiment_report",         title: "Sentiment Analysis" },
+  { key: "news_report",              title: "News Analysis" },
+  { key: "fundamentals_report",      title: "Fundamentals Analysis" },
+  { key: "investment_plan",          title: "Investment Plan (Research Manager)" },
+  { key: "investment_debate_state",  title: "Investment Debate (Bull vs Bear)" },
+  { key: "trader_investment_plan",   title: "Trader Investment Plan" },
+  { key: "risk_debate_state",        title: "Risk Assessment Debate" },
+  { key: "final_trade_decision",     title: "Final Trade Decision" },
+];
+
+// ---------------------------------------------------------------------------
+// DOM refs
+// ---------------------------------------------------------------------------
+const providerSelect  = document.getElementById("llm-provider");
+const deepModelSelect = document.getElementById("deep-model");
+const quickModelSelect= document.getElementById("quick-model");
+const form            = document.getElementById("analyze-form");
+const runBtn          = document.getElementById("run-btn");
+const progressSection = document.getElementById("progress-section");
+const progressList    = document.getElementById("progress-list");
+const resultsSection  = document.getElementById("results-section");
+const decisionBadge   = document.getElementById("decision-badge");
+const decisionTicker  = document.getElementById("decision-ticker");
+const reportCards     = document.getElementById("report-cards");
+const errorBanner     = document.getElementById("error-banner");
+const historyList     = document.getElementById("history-list");
+
+// ---------------------------------------------------------------------------
+// Model dropdowns
+// ---------------------------------------------------------------------------
+function populateModels() {
+  const provider = providerSelect.value;
+  const models = MODELS[provider] || [];
+
+  [deepModelSelect, quickModelSelect].forEach((sel) => {
+    const prev = sel.value;
+    sel.innerHTML = "";
+    models.forEach((m) => {
+      const opt = document.createElement("option");
+      opt.value = m;
+      opt.textContent = m;
+      sel.appendChild(opt);
+    });
+    // Restore previous selection if still valid
+    if (models.includes(prev)) sel.value = prev;
+  });
+}
+
+providerSelect.addEventListener("change", populateModels);
+populateModels();
+
+// Set default date to today
+document.getElementById("analysis-date").valueAsDate = new Date();
+
+// ---------------------------------------------------------------------------
+// Run analysis
+// ---------------------------------------------------------------------------
+let currentJobId = null;
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const ticker = document.getElementById("ticker").value.trim().toUpperCase();
+  const date   = document.getElementById("analysis-date").value;
+  if (!ticker || !date) return;
+
+  // Reset UI
+  errorBanner.classList.remove("visible");
+  resultsSection.classList.remove("visible");
+  progressSection.classList.add("visible");
+  runBtn.disabled = true;
+  runBtn.textContent = "Running...";
+
+  // Build progress list
+  progressList.innerHTML = "";
+  STAGES.forEach((stage) => {
+    const li = document.createElement("li");
+    li.className = "progress-item";
+    li.dataset.stage = stage;
+    li.innerHTML = `
+      <span class="progress-icon"><span style="color:var(--text-muted)">&#9675;</span></span>
+      <span>${stage}</span>
+    `;
+    progressList.appendChild(li);
+  });
+
+  // Start job
+  try {
+    const res = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ticker,
+        date,
+        llm_provider: providerSelect.value,
+        deep_think_llm: deepModelSelect.value,
+        quick_think_llm: quickModelSelect.value,
+      }),
+    });
+    const data = await res.json();
+    currentJobId = data.job_id;
+
+    // Connect SSE
+    listenSSE(currentJobId, ticker, date);
+  } catch (err) {
+    showError("Failed to start analysis: " + err.message);
+    resetForm();
+  }
+});
+
+function listenSSE(jobId, ticker, date) {
+  const source = new EventSource(`/api/status/${jobId}`);
+
+  source.addEventListener("progress", (e) => {
+    const info = JSON.parse(e.data);
+    updateProgress(info.stage, info.status);
+  });
+
+  source.addEventListener("done", async (e) => {
+    source.close();
+    const info = JSON.parse(e.data);
+
+    if (info.status === "completed") {
+      await showResults(jobId, ticker, date);
+    } else {
+      showError(info.error || "Analysis failed");
+    }
+
+    resetForm();
+    refreshHistory();
+  });
+
+  source.addEventListener("error", () => {
+    // EventSource will auto-reconnect; if job completed we'll get "done"
+  });
+}
+
+function updateProgress(stage, status) {
+  // Find matching item
+  const items = progressList.querySelectorAll(".progress-item");
+  items.forEach((item) => {
+    if (item.dataset.stage === stage) {
+      item.className = `progress-item ${status}`;
+      if (status === "running") {
+        item.querySelector(".progress-icon").innerHTML = '<div class="spinner"></div>';
+      } else if (status === "done") {
+        item.querySelector(".progress-icon").innerHTML = '<span style="color:var(--green)">&#10003;</span>';
+      } else if (status === "failed") {
+        item.querySelector(".progress-icon").innerHTML = '<span style="color:var(--red)">&#10007;</span>';
+      }
+    }
+  });
+}
+
+async function showResults(jobId, ticker, date) {
+  try {
+    const res = await fetch(`/api/result/${jobId}`);
+    const data = await res.json();
+
+    // Decision badge
+    const decision = (data.decision || "UNKNOWN").toUpperCase();
+    decisionBadge.textContent = decision;
+    decisionBadge.className = "decision-badge " + decision;
+    decisionTicker.textContent = `${ticker} \u2022 ${date}`;
+
+    // Report cards
+    reportCards.innerHTML = "";
+    REPORT_MAP.forEach(({ key, title }) => {
+      const content = data.reports?.[key];
+      if (!content) return;
+
+      const card = document.createElement("div");
+      card.className = "report-card";
+      card.innerHTML = `
+        <div class="report-header" onclick="this.parentElement.classList.toggle('open')">
+          <span class="report-title">${title}</span>
+          <span class="report-toggle">&#9660;</span>
+        </div>
+        <div class="report-body">
+          <div class="report-content">${escapeHtml(content)}</div>
+        </div>
+      `;
+      reportCards.appendChild(card);
+    });
+
+    resultsSection.classList.add("visible");
+  } catch (err) {
+    showError("Failed to load results: " + err.message);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// History sidebar
+// ---------------------------------------------------------------------------
+async function refreshHistory() {
+  try {
+    const res = await fetch("/api/history");
+    const items = await res.json();
+
+    if (items.length === 0) {
+      historyList.innerHTML = '<div class="history-empty">No analyses yet</div>';
+      return;
+    }
+
+    historyList.innerHTML = "";
+    items.forEach((item) => {
+      const div = document.createElement("div");
+      div.className = "history-item" + (item.id === currentJobId ? " active" : "");
+      const badgeColor = getBadgeColor(item.decision);
+      const badgeHtml = item.decision
+        ? `<span class="history-badge" style="background:${badgeColor}20;color:${badgeColor}">${item.decision}</span>`
+        : (item.status === "running" ? '<span class="history-badge" style="background:rgba(88,166,255,0.15);color:var(--accent)">Running</span>' : "");
+
+      div.innerHTML = `
+        <div><span class="history-ticker">${item.ticker}</span>${badgeHtml}</div>
+        <div class="history-meta">${item.date}</div>
+      `;
+
+      div.addEventListener("click", () => loadHistoryItem(item.id));
+      historyList.appendChild(div);
+    });
+  } catch (err) {
+    // Silently ignore
+  }
+}
+
+async function loadHistoryItem(jobId) {
+  try {
+    const res = await fetch(`/api/result/${jobId}`);
+    const data = await res.json();
+
+    if (data.status === "completed" && data.reports) {
+      currentJobId = jobId;
+      progressSection.classList.remove("visible");
+      await showResults(jobId, data.ticker, data.date);
+      refreshHistory();
+    }
+  } catch (err) {
+    // Ignore
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+function showError(msg) {
+  errorBanner.textContent = msg;
+  errorBanner.classList.add("visible");
+}
+
+function resetForm() {
+  runBtn.disabled = false;
+  runBtn.textContent = "Run Analysis";
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function getBadgeColor(decision) {
+  const colors = {
+    BUY: "#3fb950",
+    OVERWEIGHT: "#7ee787",
+    HOLD: "#d29922",
+    UNDERWEIGHT: "#db6d28",
+    SELL: "#f85149",
+  };
+  return colors[(decision || "").toUpperCase()] || "#8b949e";
+}
+
+// Initial history load
+refreshHistory();
+</script>
+
+</body>
+</html>
