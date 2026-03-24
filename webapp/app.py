@@ -1,13 +1,16 @@
 """FastAPI web application wrapping TradingAgentsGraph."""
 
 import asyncio
-import importlib.util
 import json
+import os
 import threading
 import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
+
+from dotenv import load_dotenv
+load_dotenv()
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
@@ -16,20 +19,16 @@ from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
 from tradingagents.default_config import DEFAULT_CONFIG
-
-# Load VALID_MODELS by importing the validators module directly from its file
-# path, avoiding the llm_clients __init__.py which requires all provider SDKs.
-_validators_path = Path(__file__).resolve().parent.parent / "tradingagents" / "llm_clients" / "validators.py"
-_spec = importlib.util.spec_from_file_location("_validators", _validators_path)
-_validators = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(_validators)
-VALID_MODELS = _validators.VALID_MODELS
+from tradingagents.llm_clients.validators import VALID_MODELS
 
 # ---------------------------------------------------------------------------
 # App setup
 # ---------------------------------------------------------------------------
 app = FastAPI(title="TradingAgents Dashboard")
-templates = Jinja2Templates(directory="webapp/templates")
+
+# Resolve templates directory relative to this file so it works regardless of CWD
+_TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
+templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
 
 # In-memory job storage
 jobs: Dict[str, Dict[str, Any]] = {}
