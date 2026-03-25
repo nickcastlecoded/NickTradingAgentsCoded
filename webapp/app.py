@@ -3,6 +3,7 @@
 import asyncio
 import json
 import os
+import traceback
 import threading
 import uuid
 from datetime import datetime
@@ -13,8 +14,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
@@ -28,7 +28,7 @@ app = FastAPI(title="TradingAgents Dashboard")
 
 # Resolve templates directory relative to this file so it works regardless of CWD
 _TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
-templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
+_INDEX_HTML = (_TEMPLATES_DIR / "index.html").read_text(encoding="utf-8")
 
 # In-memory job storage
 jobs: Dict[str, Dict[str, Any]] = {}
@@ -153,11 +153,15 @@ def _run_analysis(job_id: str, req: AnalyzeRequest) -> None:
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     """Serve the dashboard."""
-    return templates.TemplateResponse(
-        request=request,
-        name="index.html",
-        context={"models": VALID_MODELS},
-    )
+    try:
+        # Render the template by replacing the Jinja2 placeholder directly
+        html = _INDEX_HTML.replace("{{ models | tojson }}", json.dumps(VALID_MODELS))
+        return HTMLResponse(content=html)
+    except Exception as exc:
+        return PlainTextResponse(
+            content=f"Error rendering dashboard: {traceback.format_exc()}",
+            status_code=500,
+        )
 
 
 @app.get("/api/models")
