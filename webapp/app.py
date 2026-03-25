@@ -153,10 +153,11 @@ def _run_analysis(job_id: str, req: AnalyzeRequest) -> None:
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     """Serve the dashboard."""
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "models": VALID_MODELS,
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={"models": VALID_MODELS},
+    )
 
 
 @app.get("/api/models")
